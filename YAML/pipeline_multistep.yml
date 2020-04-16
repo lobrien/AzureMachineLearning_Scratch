@@ -1,0 +1,46 @@
+pipeline:
+    name: Multistep YAML Pipeline Definition
+    description: Sample multistep YAML pipeline
+    data_references:
+        TitanicDS:
+            # Note that only FileDataset is supported in YAML definitions
+            dataset_name: 'titanic_files_ds'
+            bind_mode: download
+    default_compute: cpu-compute2
+    steps:
+        Dataprep:
+            type: "PythonScriptStep"
+            name: "DataPrep Step"
+            script_name: "dataprep.py"
+            arguments:
+            - '--train_path'
+            - output:train_path
+            - '--test_path'
+            - output:test_path
+            allow_reuse: True
+            inputs:
+                titanic_ds:
+                    source: TitanicDS
+                    bind_mode: download
+            outputs:
+                train_path:
+                    destination: train_csv
+                    datastore: workspaceblobstore
+                test_path:
+                    destination: test_csv
+        Training:
+            type: "PythonScriptStep"
+            name: "Training Step"
+            script_name: "train.py"
+            arguments:
+            - "--train_path"
+            - input:train_path
+            - "--test_path"
+            - input:test_path
+            inputs:
+                train_path:
+                    source: train_csv
+                    bind_mode: download
+                test_path:
+                    source: test_csv
+                    bind_mode: download
